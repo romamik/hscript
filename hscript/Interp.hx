@@ -42,6 +42,7 @@ class Interp {
 	var locals : Hash<{ r : Dynamic }>;
 	var binops : Hash< Expr -> Expr -> Dynamic >;
 	#end
+	public var onUnknownVariable: Null<String->Dynamic>;
 
 	var depth : Int;
 	var inTry : Bool;
@@ -179,7 +180,7 @@ class Interp {
 		switch(e) {
 		case EIdent(id):
 			var l = locals.get(id);
-			var v : Dynamic = (l == null) ? variables.get(id) : l.r;
+			var v : Dynamic = (l == null) ? resolve(id) : l.r;
 			if( prefix ) {
 				v += delta;
 				if( l == null ) variables.set(id,v) else l.r = v;
@@ -287,8 +288,10 @@ class Interp {
 		if( l != null )
 			return l.r;
 		var v = variables.get(id);
-		if( v == null && !variables.exists(id) )
-			error(EUnknownVariable(id));
+		if ( v == null && !variables.exists(id) ) {
+			if (onUnknownVariable != null) v = onUnknownVariable(id);
+			if(v == null) error(EUnknownVariable(id));
+		}
 		return v;
 	}
 
