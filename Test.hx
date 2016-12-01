@@ -4,13 +4,14 @@ import hscript.Macro;
 import haxe.unit.*;
 
 class Test extends TestCase {
-	function assertScript(x,v:Dynamic,?vars : Dynamic,allowTypes=false) {
+	function assertScript(x,v:Dynamic,?vars : Dynamic,allowTypes=false,onUnknownVariable:String->Dynamic=null) {
 		var p = new hscript.Parser();
 		p.allowTypes = allowTypes;
 		var program = p.parseString(x);
 		var bytes = hscript.Bytes.encode(program);
 		program = hscript.Bytes.decode(bytes);
 		var interp = new hscript.Interp();
+		interp.onUnknownVariable = onUnknownVariable;
 		if( vars != null )
 			for( v in Reflect.fields(vars) )
 				interp.variables.set(v,Reflect.field(vars,v));
@@ -96,6 +97,7 @@ class Test extends TestCase {
 		assertScript("var a:Array<Dynamic>=[1,2,4]; a[2]", 4, null, true);
 		assertScript("/**/0", 0);
 		assertScript("x=1;x*=-2", -2);
+		assertScript("x", 1, null, false, function(_) return 1);
 	}
 	
 	function testMap():Void {
